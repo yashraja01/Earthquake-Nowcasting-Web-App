@@ -6,7 +6,6 @@ from scipy.stats import linregress
 from scipy.stats import rv_continuous
 from openpyxl import load_workbook
 
-# 1. Change input: Accept DataFrames, not file paths
 def run_eps_analysis(earthquake_df, cities_df, r_value, m_sigma, m_lambda):
     
     class ExponentiatedExponential(rv_continuous):
@@ -22,21 +21,17 @@ def run_eps_analysis(earthquake_df, cities_df, r_value, m_sigma, m_lambda):
 
     class ExponentiatedWeibull(rv_continuous):
         def _pdf(self, x, a, c, lam):
-            # PDF
             return (a * c / lam) * (x/lam)**(c-1) * np.exp(-(x/lam)**c) * \
                (1 - np.exp(-(x/lam)**c))**(a-1) * (x > 0)
 
         def _cdf(self, x, a, c, lam):
-            # CDF
             return (1 - np.exp(-(x/lam)**c))**a * (x > 0)
 
     # Create distribution object
     expon_weibull = ExponentiatedWeibull(name="exponweibull")
 
     #end of defining distributions--------------------------------------------------
-    # --- A. GENERATING PLOTS ---
-    # CRITICAL: Use the Object-Oriented approach (fig, ax)
-    # Do NOT use plt.plot() directly or plt.show()
+    # A.GENERATING PLOTS
 
     # Plot 1
     df = earthquake_df
@@ -49,7 +44,6 @@ def run_eps_analysis(earthquake_df, cities_df, r_value, m_sigma, m_lambda):
     # Round Mw to nearest 0.1
     df["Mw_round"] = df["Mw"].round(1)
 
-    # Magnitude bins
     m_min = m_sigma
     m_max = float(np.floor(df["Mw_round"].max() * 10) / 10.0)
     mag_grid = np.round(np.arange(m_min, m_max + 0.001, 0.1), 1)
@@ -68,7 +62,7 @@ def run_eps_analysis(earthquake_df, cities_df, r_value, m_sigma, m_lambda):
         "log10(N)": log10_n
     })
 
-    # Drop NaNs for regression
+    #Drop NaNs for regression
     fit_data = result.dropna(subset=["log10(N)"])
     slope, intercept, r_coeff, p_value, std_err = linregress(fit_data["Magnitude"], fit_data["log10(N)"])
     a_value = intercept
@@ -91,8 +85,7 @@ def run_eps_analysis(earthquake_df, cities_df, r_value, m_sigma, m_lambda):
     plt.legend()
     plt.show() 
     """
-    # 1. Create the Figure (fig) and Axes (ax) objects
-    # This replaces plt.figure()
+
     fig1, ax = plt.subplots(figsize=(8, 6))
     ax.scatter(result["Magnitude"], result["log10(N)"], s=40, alpha=0.7, label="Observed data")
     x_vals = np.linspace(result["Magnitude"].min(), result["Magnitude"].max(), 100)
@@ -104,18 +97,14 @@ def run_eps_analysis(earthquake_df, cities_df, r_value, m_sigma, m_lambda):
     ax.set_title("Frequency-Magnitude Distribution")
     ax.grid(True)
     ax.legend()
-
-    # 7. CRITICAL: Do NOT use plt.show(). 
-    # Instead, this 'fig1' variable is what you will return at the end of your function.
-    # return fig1, ...
     ###############################################
-    # --- 1. MERGE DATA (Replaces writing to Excel at column 6) ---
+    #1. MERGE DATA (Replaces writing to Excel at column 6)
     # Instead of saving to disk to merge, we concatenate in memory.
     # axis=1 means "put them side-by-side" (columns)
     # This creates a unified dataframe with original data + result data
     full_df = pd.concat([earthquake_df, result], axis=1)
 
-    # --- 2. CALCULATE NEW COLUMNS (No change needed, just use full_df) ---
+    #2. CALCULATE NEW COLUMNS (No change needed, just use full_df)
     
     # 1) Small? column: 1 if Mw < M_lambda, else 0
     full_df["Small?"] = (full_df["Mw"] < m_lambda).astype(int)
@@ -139,7 +128,7 @@ def run_eps_analysis(earthquake_df, cities_df, r_value, m_sigma, m_lambda):
 
     full_df["CumulativeSmall"] = cumulative_counts
 
-    # --- 3. CYCLE PEAK LOGIC ---
+    #3.CYCLE PEAK LOGIC
     values = full_df["CumulativeSmall"].tolist()
     full_df["Cycle_peak"] = np.nan # Initialize with NaN
 
@@ -148,17 +137,9 @@ def run_eps_analysis(earthquake_df, cities_df, r_value, m_sigma, m_lambda):
         if values[i] in (0, 1) and values[i-1] > values[i]:
             full_df.loc[i-1, "Cycle_peak"] = values[i-1]  # mark the peak row
 
-    # --- 4. DO NOT SAVE TO EXCEL HERE ---
-    # Do NOT use full_df.to_excel(file_path)
-    
-    # Instead, add full_df to your return statement so app.py receives it.
-    
-
-
-
     # Plot 2
     
-    # --- PREPARE DATA FOR PLOT 2 ---
+    #PREPARE DATA FOR PLOT 2
     # Ensure the dataframe being used (e.g., full_df) has the Date column in datetime format
     # Note: 'full_df' is the dataframe you created in the previous step by merging result columns
     full_df['Date'] = pd.to_datetime(full_df['Date'])
@@ -480,7 +461,7 @@ def run_eps_analysis(earthquake_df, cities_df, r_value, m_sigma, m_lambda):
 
     #####################################################
     
-    # --- CALCULATE EPS SCORES FOR CITIES ---
+    #CALCULATE EPS SCORES FOR CITIES
 
     # 1. AGGRESSIVE DATA CLEANING (Ensure types are correct)
     full_df['Mw'] = pd.to_numeric(full_df['Mw'], errors='coerce')
@@ -801,6 +782,5 @@ def run_eps_analysis(earthquake_df, cities_df, r_value, m_sigma, m_lambda):
     '''
 
 
-    # --- C. RETURN EVERYTHING ---
-    # Do not print() or plt.show(). Just return the objects.
+    #C.RETURN EVERYTHING
     return fig1, fig2, fig3, fig4, dist_table, eps_out, full_df
