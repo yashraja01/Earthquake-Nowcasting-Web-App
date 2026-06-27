@@ -29,8 +29,6 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-That's the whole setup. The app opens in your browser.
-
 ## Input data
 
 The catalog goes in as an Excel file (`.xlsx` or `.xls`) with these columns:
