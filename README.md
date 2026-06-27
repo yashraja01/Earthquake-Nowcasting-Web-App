@@ -2,7 +2,7 @@
 
 A Streamlit front end for earthquake nowcasting with the Natural Time method. Upload a seismic catalog, point it at a few cities, and get back an Earthquake Potential Score (EPS) for each one. No notebooks, no spreadsheet gymnastics.
 
-The method itself isn't new. Doing it without writing a pile of one-off code usually is. This app wraps the whole pipeline behind a single web form: Gutenberg-Richter fit, natural-time counting, distribution fitting, and scoring.
+This app wraps the whole pipeline behind a single web form: Gutenberg-Richter fit, natural-time counting, distribution fitting, and scoring.
 
 ## What nowcasting actually measures
 
